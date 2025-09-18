@@ -89,13 +89,6 @@
     letter-spacing: .3px;
   }
 
-  .brand-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: linear-gradient(135deg,var(--brand),var(--brand-2));
-  }
-
   .nav-links {
     display: flex;
     gap: 18px;
@@ -126,7 +119,6 @@
 
   .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(0,0,0,.45);
   }
 
   .btn-primary {
@@ -136,6 +128,9 @@
   }
 
   .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.45);
+    cursor:pointer;
     filter: brightness(1.05);
   }
 
@@ -483,7 +478,7 @@
 
     <header class="nav">
     <div class="nav-inner">
-      <div class="brand"><span class="brand-dot"></span> Karim Lerguet</div>
+      <div class="brand"> Karim Lerguet</div>
       <nav class="nav-links" aria-label="Navigation principale">
         <a href="#apropos">À propos</a>
         <a href="#contact">Contact</a>
@@ -496,12 +491,7 @@
 
   <!-- HERO / SLIDESHOW -->
   <main id="main" class="hero" aria-label="Introduction visuelle">
-    <div class="slides" aria-hidden="true">
 
-        <div class="slide active" style="background-image:url('assets/cover-1.jpg')"></div>
-      <div class="slide" style="background-image:url('assets/cover-2.jpg')"></div>
-      <div class="slide" style="background-image:url('assets/cover-3.jpg')"></div>
-    </div>
     <div class="hero-overlay" aria-hidden="true"></div>
 
     <div class="hero-inner container">
@@ -523,15 +513,15 @@
     <p class="section-lead">Une page d’accueil immersive, un bouton clair vers la galerie, et des animations fluides. Remplace simplement les images « assets/* » par les tiennes.</p>
     <div class="grid grid-3">
       <article class="card reveal-card left">
-        <div class="card-media" style="background-image:url('assets/highlight-1.jpg')"></div>
+        <div class="card-media" style="background-image:url('img/thumbs/urbain.jpeg')"></div>
         <div class="card-body">
-          <span class="tag">Portrait</span>
+          <span class="tag">Urbain</span>
           <h3>Expressions nettes</h3>
           <p style="color:var(--muted)">Mise au point soignée, lumière maîtrisée, rendu naturel.</p>
         </div>
       </article>
       <article class="card reveal-card center">
-        <div class="card-media" style="background-image:url('assets/highlight-2.jpg')"></div>
+        <div class="card-media" style="background-image:url('img/thumbs/telephoto.jpeg')"></div>
         <div class="card-body">
           <span class="tag">Téléphoto</span>
           <h3>Profondeur de champ</h3>
@@ -539,7 +529,7 @@
         </div>
       </article>
       <article class="card reveal-card right">
-        <div class="card-media" style="background-image:url('assets/highlight-3.jpg')"></div>
+        <div class="card-media" style="background-image:url('img/thumbs/nat.jpeg')"></div>
         <div class="card-body">
           <span class="tag">Nature</span>
           <h3>Ciel, Terre et Mer</h3>
