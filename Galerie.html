@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Galerie photo – Karim</title>
+  <meta name="theme-color" content="#0b0c10" />
+  <style>
+    /* -------------------- Thèmes via data-theme -------------------- */
+    :root{ color-scheme: light dark; }
+
+    /* Thème sombre (défaut) */
+    html[data-theme="dark"]{
+      --bg:#11131a; --ink:#e8e8ea; --muted:#a0a3ad; --border:#222533; --card:#151722; --brand:#5cc8ff; --accent:#0ea5e9;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    /* Thème clair */
+    html[data-theme="light"]{
+      --bg:#f4f5f7; --ink:#0f172a; --muted:#475569; --border:#e5e7eb; --card:#ffffff; --brand:#0ea5e9; --accent:#0284c7;
+      --shadow: 0 10px 25px rgba(2,8,23,.08);
+    }
+
+    /* Base */
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{margin:0; background:var(--bg); color:var(--ink);
+      font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto;}
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1400px;margin:0 auto;padding:22px}
+
+    header{position:sticky;top:0;background:color-mix(in srgb, var(--bg) 92%, transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--border);z-index:20}
+    header .container{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:14px 22px}
+
+    h1{font-size:clamp(22px,4vw,32px);margin:0}
+    .muted{color:var(--muted)}
+
+    /* Toggle thème */
+    .theme-btn{border:1px solid var(--border);background:var(--card);color:var(--ink);padding:8px 10px;border-radius:10px;cursor:pointer}
+    .theme-btn:hover{ filter:brightness(1.08); }
+
+    /* Barre de recherche */
+    #searchBar{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--ink);width:100%;max-width:420px}
+
+    /* Layout avec sidebar à gauche */
+    main.container{display:grid;grid-template-columns: 280px 1fr;gap:18px;align-items:start}
+    @media (max-width: 900px){ main.container{grid-template-columns:1fr} .sidebar{position:static} }
+    .sidebar{ position: sticky; top:76px; align-self:start; }
+
+    /* Filtres */
+    .filters{display:grid;gap:10px}
+    .filter-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;color:var(--ink)}
+    .filter-btn:hover{ transform:translateY(-1px); }
+    .filter-btn.active{ outline:2px solid color-mix(in srgb, var(--brand) 50%, transparent); background:color-mix(in srgb, var(--card) 80%, var(--brand) 20%); }
+    .badge{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:color-mix(in srgb, var(--card) 70%, var(--brand) 30%)}
+
+    /* Toggles utilitaires */
+    .tools{margin-top:12px;display:grid;gap:8px}
+    .tool-row{display:flex;align-items:center;gap:10px}
+    .tool-row label{font-size:14px;color:var(--muted)}
+    select{border:1px solid var(--border);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 10px}
+
+    /* Grille responsive des vignettes */
+    .grid{display:grid;gap:4px;margin-top:18px;grid-template-columns: repeat(auto-fill, minmax(220px, 1fr))}
+    @media (max-width: 900px){ .grid{grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))} }
+    @media (max-width: 600px){ .grid{grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))} }
+    .card{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--card);box-shadow:var(--shadow);transition:opacity .25s ease, transform .25s ease}
+    .thumb{display:block;aspect-ratio:1/1;object-fit:cover;width:100%;height:auto;transition:transform .25s ease;opacity:0}
+    .card.loading .thumb{filter:blur(8px)}
+    .card.ready .thumb{opacity:1;transition:opacity .35s ease, transform .25s ease}
+    .thumb[loading="lazy"]{content-visibility:auto}
+    .card:hover .thumb{transform:scale(1.03);cursor:pointer}
+    .caption{position:absolute;left:8px;bottom:8px;background:rgba(149,149,149,.35);backdrop-filter:blur(3px);padding:6px 10px;border-radius:10px;font-size:12px}
+
+    /* Lightbox */
+    .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:50}
+    .lightbox.open{display:flex}
+    .lb-inner{position:relative;max-width:min(96vw,1200px);max-height:92vh;display:grid;gap:10px}
+    .lb-stage{position:relative;overflow:hidden;border-radius:14px}
+    .lb-img{display:block;max-width:100%;max-height:92vh;border-radius:14px;transform-origin:center;cursor:zoom-in}
+    .lb-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .btn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer}
+    .btn:hover{background:rgba(255,255,255,.15)}
+    .lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:10px 12px;border-radius:12px;cursor:pointer}
+    .lb-prev{left:8px}
+    .lb-next{right:8px}
+    .lb-caption{color:#e5e7eb;font-size:14px}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    /* A11y focus */
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Galerie photo</h1>
+      <input type="text" id="searchBar" placeholder="Rechercher titre, tags… (Ctrl+/)" aria-label="Rechercher">
+      <button id="themeToggle" class="theme-btn" aria-label="Basculer le thème" title="Basculer clair/sombre">🌙</button>
+      <a href="index.html" class="muted">← Accueil</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <aside class="sidebar" aria-label="Filtres de catégories">
+      <div class="filters" id="filters" role="listbox" aria-label="Catégories">
+        <button class="filter-btn active" data-cat="all" aria-selected="true">Tout <span class="badge" data-count-for="all">0</span></button>
+        <button class="filter-btn" data-cat="paysage" aria-selected="false">Paysage <span class="badge" data-count-for="paysage">0</span></button>
+        <button class="filter-btn" data-cat="objets" aria-selected="false">Objets <span class="badge" data-count-for="objets">0</span></button>
+        <button class="filter-btn" data-cat="portrait" aria-selected="false">Portrait <span class="badge" data-count-for="portrait">0</span></button>
+      </div>
+
+      <div class="tools">
+        <div class="tool-row">
+          <label for="sortSelect">Tri</label>
+          <select id="sortSelect" aria-label="Trier les photos">
+            <option value="dateDesc">Date (récent → ancien)</option>
+            <option value="dateAsc">Date (ancien → récent)</option>
+            <option value="titleAsc">Titre (A→Z)</option>
+            <option value="titleDesc">Titre (Z→A)</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+
+    <section class="content">
+      <p class="muted" id="statusMsg">Conseil : tape « / » pour chercher, ←/→ pour naviguer en plein écran.</p>
+
+      <section class="grid" id="gallery" role="grid" aria-label="Galerie">
+        <!-- Exemple d’item : ajoute data-date (YYYY-MM-DD) et data-tags comma-separated -->
+        <figure class="card loading" data-category="paysage" data-date="2024-08-12" data-tags="paysage,lever-soleil,montagne" id="img-1">
+          <img class="thumb" loading="lazy" decoding="async" fetchpriority="low"
+               src="img/full/image_lac_MT1.jpg"
+               data-full="img/full/image_lac_MT1.jpg"
+               alt="Paysage au lever du soleil">
+          <figcaption class="caption">Paysage – Lever du soleil</figcaption>
+        </figure>
+
+        <figure class="card loading" data-category="objets" data-date="2023-10-02" data-tags="avion,aérien,transport" id="img-2">
+          <img class="thumb" loading="lazy" decoding="async" fetchpriority="low"
+               src="img/thumbs/IMG_5629.JPG"
+               data-full="img/full/IMG_5629.JPG"
+               alt="Avion sur tarmac">
+          <figcaption class="caption">Avion</figcaption>
+        </figure>
+
+        <figure class="card loading" data-category="objets" data-date="2023-12-01" data-tags="auto,vitesse,packshot" id="img-3">
+          <img class="thumb" loading="lazy" decoding="async" fetchpriority="low"
+               src="img/thumbs/IMG_6854.jpeg"
+               data-full="img/full/IMG_6854.jpeg"
+               alt="Voiture rapide – packshot">
+          <figcaption class="caption">Fastcar</figcaption>
+        </figure>
+
+        <figure class="card loading" data-category="portrait" data-date="2024-05-19" data-tags="portrait,lumière naturelle" id="img-4">
+          <img class="thumb" loading="lazy" decoding="async" fetchpriority="low"
+               src="img/thumbs/IMG_6093.jpeg"
+               data-full="img/full/IMG_6093.jpeg"
+               alt="Portrait en lumière naturelle">
+          <figcaption class="caption">Portrait</figcaption>
+        </figure>
+      </section>
+    </section>
+  </main>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" aria-modal="true" role="dialog" aria-label="Image en grand">
+    <div class="lb-inner">
+      <div class="lb-toolbar">
+        <div class="lb-caption" id="lbCaption">&nbsp;</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="lbCopyLink" aria-label="Copier le lien">🔗 Copier le lien</button>
+          <a class="btn" id="lbDownload" download aria-label="Télécharger">⬇️ Télécharger</a>
+          <button class="btn" id="lbClose" aria-label="Fermer">✕ Fermer (Esc)</button>
+        </div>
+      </div>
+      <div class="lb-stage">
+        <button class="lb-prev" id="lbPrev" aria-label="Image précédente">◀</button>
+        <img class="lb-img" id="lbImg" alt="" />
+        <button class="lb-next" id="lbNext" aria-label="Image suivante">▶</button>
+      </div>
+      <p class="sr-only" id="lbCounter" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <script>
+    /* -------------------- THEME : init + toggle + persistance -------------------- */
+    (() => {
+      const root = document.documentElement;
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initial = saved || (prefersDark ? 'dark' : 'light');
+      root.setAttribute('data-theme', initial);
+
+      const setMetaThemeColor = () => {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        meta.content = getComputedStyle(root).getPropertyValue('--bg').trim() || '#000000';
+      };
+      setMetaThemeColor();
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('themeToggle');
+        if (!btn) return;
+        const setIcon = () => {
+          const isDark = root.getAttribute('data-theme') === 'dark';
+          btn.textContent = isDark ? '🌙' : '☀️';
+          btn.setAttribute('aria-label', isDark ? 'Passer en clair' : 'Passer en sombre');
+          setMetaThemeColor();
+        };
+        setIcon();
+
+        btn.addEventListener('click', () => {
+          const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          setIcon();
+        });
+      });
+    })();
+
+    // -------------------- Galerie + Lightbox (JS pur) --------------------
+    const galleryEls = Array.from(document.querySelectorAll('#gallery .thumb'));
+    const cards = Array.from(document.querySelectorAll('#gallery .card'));
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lbImg');
+    const lbPrev = document.getElementById('lbPrev');
+    const lbNext = document.getElementById('lbNext');
+    const lbClose = document.getElementById('lbClose');
+    const lbCounter = document.getElementById('lbCounter');
+    const lbCaption = document.getElementById('lbCaption');
+    const lbDownload = document.getElementById('lbDownload');
+    const lbCopyLink = document.getElementById('lbCopyLink');
+
+    // état
+    let index = 0;
+    let zoom = 1;
+    let origin = {x:0,y:0};
+    let isPanning = false;
+
+    // Préparer badges de comptage
+    const counts = { all: cards.length };
+    for (const card of cards){
+      const cat = (card.dataset.category||'').toLowerCase();
+      counts[cat] = (counts[cat]||0)+1;
+    }
+    document.querySelectorAll('[data-count-for]').forEach(b=>{
+      const key = b.getAttribute('data-count-for');
+      b.textContent = counts[key] || 0;
+    });
+
+    // Chargement progressif (supprime l'effet flou une fois chargé)
+    cards.forEach(c => {
+      const img = c.querySelector('img');
+      if (img.complete) c.classList.replace('loading','ready');
+      img.addEventListener('load',()=> c.classList.replace('loading','ready'));
+    });
+
+    function updateCounter(){ lbCounter.textContent = `${index+1} / ${galleryEls.length}`; }
+
+    function setLightboxSrcFromIndex(i){
+      index = i;
+      const el = galleryEls[index];
+      const full = el.getAttribute('data-full') || el.currentSrc || el.src;
+      const alt = el.alt || '';
+      lbImg.src = full;
+      lbImg.alt = alt;
+      lbDownload.href = full;
+      lbCaption.textContent = el.closest('figure')?.querySelector('.caption')?.textContent || alt || 'Photo';
+      updateCounter();
+      // pré-chargement des voisines
+      const prevIdx = (index - 1 + galleryEls.length) % galleryEls.length;
+      const nextIdx = (index + 1) % galleryEls.length;
+      [prevIdx, nextIdx].forEach(i=>{ const p=new Image(); p.src = galleryEls[i].getAttribute('data-full') || galleryEls[i].src; });
+    }
+
+    function openAt(i){
+      setLightboxSrcFromIndex(i);
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      lbImg.style.transform = 'scale(1)';
+      zoom = 1; origin={x:0,y:0};
+      lbImg.style.cursor = 'zoom-in';
+      lb.setAttribute('aria-hidden','false');
+      // focus trap minimal
+      setTimeout(()=> lbClose.focus(), 0);
+      // hash deep-link
+      history.replaceState(null,'',`#${galleryEls[i].closest('figure').id || `img-${i+1}`}`);
+    }
+
+    function closeLb(){
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+      lb.setAttribute('aria-hidden','true');
+      history.replaceState(null,'',location.pathname + location.search);
+    }
+    function prev(){ openAt( (index - 1 + galleryEls.length) % galleryEls.length ); }
+    function next(){ openAt( (index + 1) % galleryEls.length ); }
+
+    // Zoom au clic & molette
+    function applyPan(){ lbImg.style.transform = `translate(${origin.x}px, ${origin.y}px) scale(${zoom})`; }
+    lbImg.addEventListener('click', (e)=>{
+      if (zoom === 1){ zoom = 2; lbImg.style.cursor = 'grab'; }
+      else { zoom = 1; origin={x:0,y:0}; lbImg.style.cursor = 'zoom-in'; }
+      applyPan();
+    });
+    lbImg.addEventListener('wheel', (e)=>{
+      e.preventDefault();
+      const delta = Math.sign(e.deltaY);
+      zoom = Math.min(4, Math.max(1, zoom + (delta>0?-0.2:0.2)));
+      if (zoom === 1) origin={x:0,y:0};
+      lbImg.style.cursor = zoom>1 ? 'grab' : 'zoom-in';
+      applyPan();
+    }, {passive:false});
+    lbImg.addEventListener('mousedown', e=>{ if(zoom>1){ isPanning=true; lbImg.style.cursor='grabbing'; startX=e.clientX; startY=e.clientY; } });
+    let startX=0, startY=0;
+    window.addEventListener('mousemove', e=>{ if(isPanning){ origin.x += (e.clientX-startX); origin.y += (e.clientY-startY); startX=e.clientX; startY=e.clientY; applyPan(); }});
+    window.addEventListener('mouseup', ()=>{ isPanning=false; if(zoom>1) lbImg.style.cursor='grab'; });
+
+    // Ouvrir, naviguer
+    galleryEls.forEach((img, i)=>{
+      img.addEventListener('click', ()=> openAt(i));
+      img.tabIndex = 0;
+      img.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ openAt(i); }});
+    });
+
+    lbClose.addEventListener('click', closeLb);
+    lb.addEventListener('click', (e)=>{ if(e.target === lb) closeLb(); });
+    lbPrev.addEventListener('click', prev);
+    lbNext.addEventListener('click', next);
+
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === '/' && document.activeElement !== document.getElementById('searchBar')){ e.preventDefault(); document.getElementById('searchBar').focus(); return; }
+      if(!lb.classList.contains('open')) return;
+      if(e.key==='Escape') closeLb();
+      if(e.key==='ArrowLeft') prev();
+      if(e.key==='ArrowRight') next();
+    });
+
+    // Copier lien direct (hash)
+    lbCopyLink.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(location.href); lbCopyLink.textContent='Lien copié ✔'; setTimeout(()=> lbCopyLink.textContent='🔗 Copier le lien',1500);}catch{ lbCopyLink.textContent='Impossible de copier'; setTimeout(()=> lbCopyLink.textContent='🔗 Copier le lien',1500);} 
+    });
+
+    // Gestes tactiles
+    let startXTouch = null;
+    lb.addEventListener('touchstart', (e)=>{ startXTouch = e.touches[0].clientX; }, {passive:true});
+    lb.addEventListener('touchmove', (e)=>{
+      if(startXTouch===null) return;
+      const dx = e.touches[0].clientX - startXTouch;
+      if(Math.abs(dx)>60){ dx>0 ? prev() : next(); startXTouch=null; }
+    }, {passive:true});
+
+    // -------------------- Filtres / Recherche / Tri / Préférences --------------------
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const searchBar = document.getElementById('searchBar');
+    const sortSelect = document.getElementById('sortSelect');
+    
+
+    let currentCat = localStorage.getItem('galerie.cat') || 'all';
+    let currentSearch = new URLSearchParams(location.search).get('q')?.toLowerCase() || localStorage.getItem('galerie.q') || '';
+    searchBar.value = currentSearch;
+
+    // appliquer état visuel du filtre
+    function syncFilterButtons(){
+      filterButtons.forEach(b=>{
+        const active = b.getAttribute('data-cat')===currentCat;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', String(active));
+      });
+    }
+
+    function applyFilter(){
+      const q = (currentSearch||'').toLowerCase();
+      let visibleCount = 0;
+      cards.forEach(card => {
+        const c = (card.getAttribute('data-category') || '').toLowerCase();
+        const showCat = (currentCat === 'all') || (c === currentCat);
+        const caption = (card.querySelector('figcaption')?.textContent || '').toLowerCase();
+        const tags = (card.dataset.tags||'').toLowerCase();
+        const match = !q || caption.includes(q) || tags.includes(q);
+        const show = showCat && match;
+        card.style.display = show ? '' : 'none';
+        if(show) visibleCount++;
+      });
+      document.getElementById('statusMsg').textContent = visibleCount ? `${visibleCount} photo(s) affichée(s)` : 'Aucun résultat';
+    }
+
+    // Tri
+    function sortCards(){
+      const grid = document.getElementById('gallery');
+      const items = Array.from(grid.children);
+      const mode = localStorage.getItem('galerie.sort') || 'dateDesc';
+      sortSelect.value = mode;
+      items.sort((a,b)=>{
+        const titleA = a.querySelector('.caption')?.textContent?.trim().toLowerCase() || '';
+        const titleB = b.querySelector('.caption')?.textContent?.trim().toLowerCase() || '';
+        const dateA = a.dataset.date || '1970-01-01';
+        const dateB = b.dataset.date || '1970-01-01';
+        switch(mode){
+          case 'dateAsc': return dateA.localeCompare(dateB);
+          case 'titleAsc': return titleA.localeCompare(titleB);
+          case 'titleDesc': return titleB.localeCompare(titleA);
+          default: return dateB.localeCompare(dateA); // dateDesc
+        }
+      });
+      items.forEach(it=>grid.appendChild(it));
+    }
+
+    // ratio carré toggle
+    
+
+    // Listeners UI
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentCat = btn.getAttribute('data-cat');
+        localStorage.setItem('galerie.cat', currentCat);
+        syncFilterButtons();
+        applyFilter();
+      });
+    });
+
+    searchBar.addEventListener('input', () => {
+      currentSearch = searchBar.value.toLowerCase();
+      localStorage.setItem('galerie.q', currentSearch);
+      const url = new URL(location);
+      if(currentSearch) url.searchParams.set('q', currentSearch); else url.searchParams.delete('q');
+      history.replaceState(null,'',url);
+      applyFilter();
+    });
+
+    sortSelect.addEventListener('change', ()=>{ localStorage.setItem('galerie.sort', sortSelect.value); sortCards(); });
+
+    // Deep link (#img-x)
+    function openFromHash(){
+      const id = location.hash.replace('#','');
+      if(!id) return;
+      const fig = document.getElementById(id);
+      if(!fig) return;
+      const i = galleryEls.findIndex(el => el.closest('figure') === fig);
+      if(i>=0) openAt(i);
+    }
+
+    // Init
+    (function init(){
+      // Restituer préférences
+      syncFilterButtons();
+      sortCards();
+      applyFilter();
+      openFromHash();
+    })();
+  </script>
+</body>
+</html>
